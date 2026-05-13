@@ -1,6 +1,6 @@
 # deal-focus-agent
 
-A Claude Code skill that tells the founder which 5 deals to focus on this week, why each one matters, and what specific action to take. Reads calls, emails, and notes from your Attio workspace. Updates a Red/Yellow/Green health on every open deal. Delivers a Monday digest by email, Slack, or Notion. Runs on a weekly cron in your own account.
+A Claude Code skill that tells the founder which 5 deals to focus on this week, why each one matters, and what specific action to take. Reads calls, emails, and notes from your Attio workspace. Updates a Red/Yellow/Green health on every open deal. Delivers a Monday digest to your Slack DM. Runs on a weekly cron in your own account.
 
 ## What it does
 
@@ -45,7 +45,7 @@ You own the Anthropic key, the Attio connector, and the schedule. Your tokens, y
 - [Claude Code](https://claude.com/claude-code) installed and signed in
 - An Attio workspace with admin access
 - The [Attio MCP connector](https://attio.com/help/articles/4544827) connected to Claude Code
-- A Gmail connector (default delivery) OR Slack connector OR Notion connector
+- The [Slack connector](https://claude.ai/settings/connectors) connected to Claude Code (default delivery) — or Gmail / Notion as alternatives
 - A Deal object with `stage`, `amount`, and `owner` attributes (Attio defaults work)
 - Three custom attributes on the Deal object — you create these in Attio first (see Setup step 1)
 
@@ -112,7 +112,7 @@ Then paste this when prompted:
 ```
 Cadence: 0 8 * * 1 (Mondays 8am, in your local timezone)
 Name: deal-focus-monday
-MCP: Attio, Gmail
+MCP: Attio, Slack
 
 Prompt:
 You are running the Monday deal-focus-agent pass over the <YOUR_WORKSPACE_NAME> Attio workspace.
@@ -123,18 +123,18 @@ Configuration:
 - Deals list ID: <DEALS_LIST_ID>
 - Threshold amount: $<THRESHOLD>          # ignore deals under this
 - Lookback days: 30
-- Founder email: <FOUNDER_EMAIL>
+- Founder Slack user ID: <FOUNDER_SLACK_USER_ID>
 - Workspace expected from whoami: <YOUR_WORKSPACE_NAME>
 
 At the end:
 1. Confirm every open deal got a Red/Yellow/Green health written to Attio plus a reasoning note.
-2. Create a Gmail draft to <FOUNDER_EMAIL> with subject "Monday focus — <today's date>" and the digest as the body.
+2. Send the full digest to <FOUNDER_SLACK_USER_ID> as a Slack DM via slack_send_message. Use Slack markdown for formatting (emoji as Unicode, *bold*, blank lines between entries).
 3. Print the full digest as your final response so it appears in the schedule notification.
 
 Constraints (hard):
 - Never invent quotes. Every cited fact must trace to a real call date, email date, or note.
 - Never write to Attio if whoami returns a workspace other than <YOUR_WORKSPACE_NAME>.
-- Never email customer prospects. Outbound is the founder's job.
+- Never email or DM customer prospects. Outbound is the founder's job.
 - Never grade rep performance.
 
 If anything fails, stop and report the exact error.
@@ -147,25 +147,25 @@ Replace the `<PLACEHOLDERS>` with your values before submitting:
 | `<YOUR_WORKSPACE_NAME>` | Exact value `whoami` returns from the Attio MCP |
 | `<DEALS_LIST_ID>` | The list ID from Attio (URL fragment after `/list/`) |
 | `<THRESHOLD>` | Dollar amount below which deals are ignored (default `10000`) |
-| `<FOUNDER_EMAIL>` | Email address that receives the digest |
+| `<FOUNDER_SLACK_USER_ID>` | Your Slack user ID (format: `U01234567`). Find it via Slack profile → ... menu → Copy member ID, or ask Claude `find my Slack user ID` and it'll use slack_search_users. |
 
 ### Where the digest lands
 
 By default, two places:
 
-1. **Gmail draft** in your inbox, ready to read (or send to yourself if you want it in the inbox proper).
-2. **The `/schedule` notification** in Claude Code — when you open Claude Monday morning, the digest is in the notification stream.
+1. **Slack DM to you** — the digest arrives in your DM thread Monday morning, mobile or desktop. Same channel customers will get it on.
+2. **The `/schedule` notification** in Claude Code — when you open Claude Monday morning, the digest is also in the notification stream.
 
-To swap Gmail for Slack DM: in the prompt above, replace step 2 with `Send a Slack DM via slack_send_message to user ID <YOUR_SLACK_USER_ID> with the digest as the message.` and add `Slack` to the MCP list.
+To swap Slack for Gmail draft: in the prompt above, replace step 2 with `Create a Gmail draft to <FOUNDER_EMAIL> with subject "Monday focus — <today's date>" and the digest as the body.` and swap `Slack` for `Gmail` in the MCP list.
 
-To swap for Notion: replace step 2 with `Create a Notion page titled "Monday Focus — <date>" in the <NOTION_PARENT_PAGE_ID> page with the digest as the body.` and add `Notion` to the MCP list.
+To swap for Notion: replace step 2 with `Create a Notion page titled "Monday Focus — <date>" in the <NOTION_PARENT_PAGE_ID> page with the digest as the body.` and swap `Slack` for `Notion` in the MCP list.
 
 ## Verifying it works
 
 After the first run:
 
 1. Open Attio → any open deal → check the `health` attribute is set and a fresh note is attached titled with today's date.
-2. Open Gmail → drafts folder → confirm the digest draft is there.
+2. Open Slack → your DMs → confirm the digest landed Monday morning.
 3. Click through 2–3 random deals and confirm the reasoning cites actual calls/emails from the lookback window. If it cites something that's not in the deal's record, that's a bug — open an issue.
 
 ## Customizing
@@ -192,7 +192,7 @@ Default is top 5. Change in the schedule prompt if you want top 3 or top 10.
 
 **"Workspace mismatch" errors** — The skill aborts if `whoami` returns a different workspace. Fix the placeholder or switch your Attio MCP to the right workspace.
 
-**"Schedule fires but no email arrives"** — Check the Gmail MCP is connected to the schedule's MCP list. The prompt creates a *draft*, not a sent email — open the drafts folder.
+**"Schedule fires but no Slack message arrives"** — Three things to check: (1) Slack MCP is connected to the schedule's MCP list. (2) `<FOUNDER_SLACK_USER_ID>` is your real user ID (`U01234567` format), not your username or display name. (3) The bot/app behind the Slack connector has permission to DM you — for some workspaces this requires installing the Claude Slack app, not just connecting.
 
 **"Digest reasoning is generic"** — Bundle is too thin. Either no recent calls/emails are linked to the deal, or the lookback window is too short. Check the deal in Attio → activity tab. If activity is sparse, the agent honestly says so and scores `unknown`.
 

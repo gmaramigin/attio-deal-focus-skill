@@ -97,14 +97,14 @@ What you do:
 7. Rank by `priority = risk_score × amount × stage_weight`. Take top 5.
 8. Format the digest per [references/digest.md](references/digest.md).
 9. Deliver via the configured channel:
-   - **Gmail draft** (default): `create_draft` to the founder's email with subject `Monday focus — <date>` and the digest as the body. The founder reads or sends.
-   - **Slack DM**: `slack_send_message` to the founder's user ID.
+   - **Slack DM** (default): `slack_send_message` to the founder's user ID with the full digest as the message body. Founder reads it Monday morning, mobile or desktop.
+   - **Gmail draft**: `create_draft` to the founder's email with subject `Monday focus — <date>` and the digest as the body.
    - **Notion page**: `notion-create-pages` titled `Monday Focus — <date>` in the customer's workspace.
 10. Also print the digest as the final text of your response so it appears in the `/schedule` notification.
 
 That's the whole flow. No separate orchestrator, no JSON parsing — you do the analysis yourself because you're already Claude.
 
-The `/schedule` prompt template lives in the README. The placeholders (`<YOUR_WORKSPACE_NAME>`, `<DEALS_LIST_ID>`, `<THRESHOLD>`, `<FOUNDER_EMAIL>`) get filled in once when the schedule is created.
+The `/schedule` prompt template lives in the README. The placeholders (`<YOUR_WORKSPACE_NAME>`, `<DEALS_LIST_ID>`, `<THRESHOLD>`, `<FOUNDER_SLACK_USER_ID>`) get filled in once when the schedule is created.
 
 ## The AI implementation
 
